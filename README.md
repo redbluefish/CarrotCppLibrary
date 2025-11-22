@@ -1,0 +1,1 @@
+NOTE: The project is initializing and not started starting building till now
