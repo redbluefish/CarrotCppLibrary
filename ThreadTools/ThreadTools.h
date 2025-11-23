@@ -115,7 +115,10 @@ signed int cqueue<T>::push_back(T& pv)
     ptr_end++;
     if (ptr_end == pass_end_ptr)
     {
-
+        if (ptr_begin == array)
+        {
+            return 2; // space not enough
+        }
     }
 }
 
