@@ -4,10 +4,15 @@
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <deque>
 #include <thread>
 #include <vector>
+#include <xutility>
+
+#include "DEBUG.h"
 
 //In development, all code will be in the one file
+//Exceptions are deprecated
 template <typename T>
 class cqueue
 {
@@ -17,12 +22,23 @@ private:
     T* ptr_begin = nullptr;
     T* ptr_end = nullptr;
 public:
-    cqueue(size_t preallocate_size = 0);
+    cqueue(size_t preallocate_size = 1);
     ~cqueue();
     cqueue(const cqueue&);
     cqueue(cqueue&&);
     cqueue& operator=(const cqueue&);
     cqueue& operator=(cqueue&&);
+    signed int push_back(T&);
+    signed int push_back(T&&);
+    template <typename... Args>
+    signed int emplace_back(Args...);
+    //you may want to ask why use error code
+    // the 'ancient' way to handle exception
+    //if you very care about performance, you will do this like me
+    T& pop_back();
+
+    T& front();
+    T& back();
     // not support std::initializer_list
 };
 
@@ -33,16 +49,73 @@ cqueue<T>::cqueue(size_t preallocate_size)
     {
         array = new T[preallocate_size];
         pass_end_ptr = array + preallocate_size;
-        ptr_begin = ptr_end = array;
+        ptr_begin = array - 1;
+        ptr_end = array;
     }
 }
 
 template <typename T>
-cqueue<T>::cqueue(const cqueue<T>& src)
+cqueue<T>::cqueue(const cqueue& src)
 {
-    if (src.array != nullptr && src.pass_end_ptr != nullptr)
+    *this = src;
+}
+
+template <typename T>
+cqueue<T>::cqueue(cqueue&& src)
+{
+    *this = ::std::move(src);
+}
+
+template <typename T>
+cqueue<T>::~cqueue()
+{
+    delete array;
+}
+
+template <typename T>
+cqueue<T>& cqueue<T>::operator=(const cqueue& src)
+{
+    delete array;
+    if (src.array != nullptr)
     {
-        fuck you
+        array = new T[src.pass_end_ptr - src.array];
+        pass_end_ptr = array - src.array + src.pass_end_ptr;
+        memcpy(array, src.array, sizeof(T) * (src.pass_end_ptr - src.array));
+        ptr_begin = src.ptr_begin - src.array + array;
+        ptr_end = src.ptr_end - src.array + array;
+    }
+    else
+    {
+        ptr_end = ptr_begin = pass_end_ptr = array = nullptr;
+    }
+    return *this;
+}
+
+template <typename T>
+cqueue<T>& cqueue<T>::operator=(cqueue&& src)
+{
+    array = src.array;
+    pass_end_ptr = src.pass_end_ptr;
+    ptr_begin = src.ptr_begin;
+    ptr_end = src.ptr_end;
+    src.array = nullptr;
+    src.pass_end_ptr = nullptr;
+    src.ptr_begin = nullptr;
+    src.ptr_end = nullptr;
+    return *this;
+}
+
+template <typename T>
+signed int cqueue<T>::push_back(T& pv)
+{
+    if (array == nullptr)
+    {
+        return 1; // uninitialized
+    }
+    ptr_end++;
+    if (ptr_end == pass_end_ptr)
+    {
+
     }
 }
 
@@ -90,6 +163,8 @@ public:
 //
 //}
 
+
 template class cqueue<int>;
+
 
 #endif
