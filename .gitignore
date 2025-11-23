@@ -1,4 +1,4 @@
-/build/
+out/
 *.exe
 *.out
 *.app

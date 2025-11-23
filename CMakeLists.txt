@@ -11,5 +11,13 @@ endif()
 
 project ("CarrotCppLibrary")
 
-# Include sub-projects.
-add_subdirectory ("CarrotCppLibrary")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# add_subdirectory("ThreadTools")
+
+add_executable(
+	"CarrotCppLibraryTest"
+	"ThreadTools/ThreadTools.cpp"
+	"ThreadTools/test.cpp"
+ "ThreadTools/DEBUG.h")
