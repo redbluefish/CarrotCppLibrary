@@ -10,6 +10,7 @@
 #include <xutility>
 
 #include "DEBUG.h"
+#include "../General/General.h"
 
 //In development, all code will be in the one file
 //Exceptions are deprecated
@@ -21,6 +22,8 @@ private:
     T* pass_end_ptr = nullptr;
     T* ptr_begin = nullptr;
     T* ptr_end = nullptr;
+
+    signed int add_space();
 public:
     cqueue(size_t preallocate_size = 1);
     ~cqueue();
@@ -28,19 +31,42 @@ public:
     cqueue(cqueue&&);
     cqueue& operator=(const cqueue&);
     cqueue& operator=(cqueue&&);
-    signed int push_back(T&);
-    signed int push_back(T&&);
+    void push_back(T&&);
     template <typename... Args>
-    signed int emplace_back(Args...);
-    //you may want to ask why use error code
-    // the 'ancient' way to handle exception
-    //if you very care about performance, you will do this like me
+    void emplace_back(Args&&...);
     T& pop_back();
 
     T& front();
     T& back();
     // not support std::initializer_list
 };
+
+template <typename T>
+signed int cqueue<T>::add_space()
+{
+    if (array == nullptr)
+    {
+        return 1; // uninitialized
+    }
+    if (ptr_begin == array - 1)
+    {
+        ptr_begin++;
+    }
+    ptr_end++;
+    if (ptr_end == pass_end_ptr)
+    {
+        if (ptr_begin == array)
+        {
+            ptr_end--;
+            return 2; // space not enough
+        }
+        else
+        {
+            ptr_end = array + 1;
+        }
+    }
+    return 0;
+}
 
 template <typename T>
 cqueue<T>::cqueue(size_t preallocate_size)
@@ -52,6 +78,7 @@ cqueue<T>::cqueue(size_t preallocate_size)
         ptr_begin = array - 1;
         ptr_end = array;
     }
+    
 }
 
 template <typename T>
@@ -106,20 +133,90 @@ cqueue<T>& cqueue<T>::operator=(cqueue&& src)
 }
 
 template <typename T>
-signed int cqueue<T>::push_back(T& pv)
+void cqueue<T>::push_back(T&& src)
+{
+    signed int return_code = add_space();
+    if (return_code == 0)
+    {
+        *(ptr_end - 1) = std::forward<T>(src);
+    }
+    else if (return_code == 1)
+    {
+        throw CarrotCppLibException(
+            std::string("queue is uninitialized or no space allocated")
+        );
+    }
+    else if (return_code == 2)
+    {
+        throw CarrotCppLibException(
+            std::string("space is not enough")
+            );
+    }
+}
+
+template <typename T>
+template <typename... Args>
+void cqueue<T>::emplace_back(Args&&... argv)
+{
+    signed int return_code = add_space();
+    if (return_code == 0)
+    {
+        *(ptr_end - 1) = std::move(T(std::forward<Args...>(argv)));
+    }
+    else if (return_code == 1)
+    {
+        throw CarrotCppLibException(
+            std::string("queue is uninitialized or no space allocated")
+        );
+    }
+    else if (return_code == 2)
+    {
+        throw CarrotCppLibException(
+            std::string("space is not enough")
+            );
+    }
+}
+
+template <typename T>
+T& cqueue<T>::pop_back()
+{
+    T* res = nullptr;
+    if (ptr_end == array)
+    {
+        if (ptr_begin + 1 == array)
+        {
+            throw CarrotCppLibException("no element to pop");
+        }
+        else
+        {
+            res = array;
+            ptr_end = pass_end_ptr;
+        }
+    }
+    else
+    {
+        ptr_end--;
+        res = pass_end_ptr;
+    }
+    return *res;
+}
+
+template <typename T>
+T& cqueue<T>::front()
 {
     if (array == nullptr)
     {
-        return 1; // uninitialized
+        throw CarrotCppLibException(
+            std::string("no space allocated")
+        );
     }
-    ptr_end++;
-    if (ptr_end == pass_end_ptr)
+    if (ptr_begin == array - 1)
     {
-        if (ptr_begin == array)
-        {
-            return 2; // space not enough
-        }
+        throw CarrotCppLibException(
+            std::string("no element in queue")
+        );
     }
+
 }
 
 class task_pool

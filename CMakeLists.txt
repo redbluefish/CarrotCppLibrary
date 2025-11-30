@@ -20,4 +20,4 @@ add_executable(
 	"CarrotCppLibraryTest"
 	"ThreadTools/ThreadTools.cpp"
 	"ThreadTools/test.cpp"
- "ThreadTools/DEBUG.h")
+ "ThreadTools/DEBUG.h" "General/General.h" "General/General.cpp")
